@@ -37,21 +37,15 @@ class LengthCounter {
 data class Client(val name: String, val postalCode: Int)
 
 
-// Collection을 상속받고, innerList에 위임했다.
-// Collectino을 상속받았으니 Collection에서 요구하는 것들을 구현해야한다.
+// 인터페이스를 구현할 때 by 키워드를 통해 그 인터페이스에 대한 구현을 다른 객체에 위임 중이라는 사실을 명시할 수 있다.
 // 구현을 innerList에 위임함. 구현해야하는 것들은 ArrayList의 방식으로 구현될 것이다.
-// ArrayList에만 있는 것들까지 구현되었을까? --> Collection을 상속했기 때문에 ArrayList에만 있는 것들은 구현되지 않는다.
-// 위임은 인터페이스만 가능하다.
+// ArrayList에만 있는 것들까지 구현되었을까? --> Collection 인터페이스를 구현하는 것이기 때문에 ArrayList에만 있는 것들은 구현되지 않는다.
+// 위임은 인터페이스만 가능하다. 클래스는 안됨.
 class DelegatingCollection<T> (
         innerList: Collection<T> = ArrayList<T>()
 ): Collection<T> by innerList {
 //    override val size: Int get() = 10
 }
-
-// object 키워드를 다양한 상황에서 사용하지만 모든 경우 "클래스를 정의하면서 동시에 인스턴스(객체)를 생성"한다는 공통점이 있다.
-// - 객체 선언은 싱글턴을 정의하는 방법 중 하나이다.
-// - 동반 객체는 인스턴스 메소드는 아니지만 어떤 클래스와 관련 있는 메소드와 팩토리 메소드를 담을 때 쓰인다.
-// - 객체 식은 무명 내부 클래스 대신 쓰인다.
 
 fun main(args: Array<String>) {
     val user = User("Alice")
@@ -83,6 +77,4 @@ fun main(args: Array<String>) {
 
     val delegatingCollection = DelegatingCollection<Int>()
     println(delegatingCollection.size)
-
-
 }
