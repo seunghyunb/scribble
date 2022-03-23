@@ -1,6 +1,5 @@
 package fifth
 
-import jdk.nashorn.internal.objects.NativeFunction.apply
 
 /* 기존 자바 API에 람다를 활용하는 방법
      코틀린 람다를 자바 API에 사용해도 아무 문제가 없다.
