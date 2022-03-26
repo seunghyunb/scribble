@@ -1,3 +1,4 @@
+
 /*
     코틀린의 타입 시스템
      자바와 비교하면 코틀린의 타입 시스템은 코드의 가독성을 향상시키는데 도움이 되는 몇가지 특성을 새로 제공한다.
@@ -177,8 +178,74 @@
      코틀린 산술 연산자에서도 자바와 똑같이 숫자 연산시 값 넘침(overflow)이 발생할 수 있다.
       값 넘침을 검사하느라 추가 비용을 들이지 않는다.
 
-*/
+    최상위 타입 Any, Any?
+     자바에서 Object가 클래스 계층의 최상위 타입이듯 코틀린에서는 Any 타입이 모든 널이 될 수 없는 타입의 조상 타입이다.
+     원시 타입 값을 Any 타입의 변수에 대입하면 자동으로 값을 객체로 감싼다.
+     내부에서 Any 타입은 java.lang.Object 에 대응한다.
+      자바에서 Object 를 인자로 받거나 반환하면 코틀린에서는 Any 타입으로 취급한다(정확히는 플랫폼 타입 Any!).
+     모든 코틀린 클래스에는 toString, equals, hashCode 라는 세 메소드가 들어있다.
+      java.lang.Object 에 있는 다른 메소드 wait, notify 등은 Any에서 사용할 수 없다.
+      따라서 그런 메소드를 호출하고 싶다면 java.lang.Object 타입으로 값을 캐스팅해야한다.
 
+    Unit 타입: 코틀린의 void
+     코틀린의 Unit 타입은 자바 void 와 같은 기능을 한다.
+      코틀린 함수의 반환 타입이 Unit 이고 그 함수가 제네릭 함수를 오버라이드하지 않는다면 그 함수는 내부에서 자바 void 함수로 컴파일된다.
+     대부분의 경우 void 와 Unit 의 차이를 알기는 어렵다. 다른 점은 무엇일까?
+      Unit은 모든 기능을 갖는 일반적인 타입이며, void 와 달리 Unit 을 타입 인자로 쓸 수 있다.
+      Unit 타입에 속한 값은 단 하나 뿐이며 이름도 Unit 이다.
+      Unit 타입의 함수는 Unit 값을 묵시적으로 반환한다.
+      이 특성은 제네릭 파라미터를 반환하는 함수를 오버라이드하면서 반환 타입으로 Unit을 쓸 때 유용하다.
+     코틀린에서 Void 가 아니라 Unit 이란 이름을 골랐을까?
+      함수형 프로그래밍에서 전통적으로 Unit은 '단 하나의 인스턴스만 갖는 타입'을 의미해 왔고 바로 그 유일한 인스턴스의 유무가 자바 void 와 코틀린 Unit 을 구분하는 가장 큰 차이다.
+
+    Nothing 타입: 이 함수는 결코 정상적으로 끝나지 않는다.
+     결코 성공적으로 값을 돌려주는 일이 없으므로 '반환 값'이라는 개념 자체가 의미 없는 함수가 일부 존재한다.
+      예를 들어 테스트 라이브러리들은 fail 이라는 함수를 제공하는 경우가 많다.
+       fail 은 특별한 메시지가 들어있는 예외를 던져서 현재 테스트를 실패시킨다.
+     Nothing 타입은 아무 값도 포함하지 않는다. 따라서 함수의 반환 타입이나 반환 타입으로 쓰일 파라미터로만 쓸 수 있다.
+      Nothing 타입의 변수를 선언해도 값을 가질 수 없어 의미가 없다.
+     Nothing을 반환하는 함수를 엘비스 연산자의 우항에 사용해서 전제 조건을 검사할 수 있다.
+      이런 방식은 타입 시스템에서 Nothing 이 얼마나 유용한지 보여준다.
+
+    널 가능성과 컬렉션
+     filterNotNull: 널이 될 수 있는 값으로 이뤄진 컬렉션에서 널 값을 걸러낼 때 사용 가능한 함수.
+
+    읽기 전용과 변경 가능한 컬렉션
+     코틀린 컬렉션과 자바 컬렉션을 나누는 가장 중요한 특성 하나
+      코틀린에서는 컬렉션 안의 데이터에 접근하는 인터페이스와 컬렉션 안의 데이터를 변경하는 인터페이스를 분리했다는 점이다.
+     kotlin.collections.Collection 인터페이스를 사용하면 컬렉션 안의 원소에 대해 이터레이션하고, 컬렉션의 크기를 얻고, 어떤 값이 컬렉션 안에 들어있는지 검사하고, 컬렉션에서 데이터를 ㅣㅇㄺ는 여러 다른 연산을 수행할 수 있다.
+      하지만 Collection 인터페이스에는 원소를 추가하거나 제거하는 메소드가 없다.
+     컬렉션의 데이터를 수정하려면 kotlin.collections.MutableCollection 인터페이스를 사용한다.
+      MutableCollection 인터페이스는 Collection 을 확장하면서 원소를 추가하거나, 삭제하거나, 컬렉션 안의 원소를 모두 지우는 등의 메소드를 더 제공한다.
+     읽기 전용과 변경 가능한 컬렉션을 구분하는 이유는 프로그램에서 데이터에 어떤 일이 벌어지는지를 더 쉽게 이해하기 위함이다.
+     컬렉션 인터페이스를 사용할 때 항상 염두에 둬야 할 핵심은 읽기 전용 컬렉션이라고 해서 꼭 변경 불가능한 컬렉션일 필요는 없다는 점이다.
+      하나의 컬렉션 객체를 읽기 전용 컬렉션 타입으로 혹은 변경 가능한 컬렉션 타입으로 참조할 수 있다.
+       그래서 사용 도중에 컬렉션의 내용이 변경 될 수 있으니 읽기 전용 컬렉션이 항상 스레드 안전하지 않다는 점을 명심해야 한다.
+
+    코틀린 컬렉션과 자바
+     자바 메소드를 호출하되 컬렉션을 인자로 넘겨야 한다면 추가 작업 없이 직접 컬렉션을 넘기면 된다.
+      자바는 읽기 전용 컬렉션과 변경 가능한 컬렉션을 구분하지 않으므로, 코틀린에서 읽기 전용 Collection 으로 선언된 객체라도 자바 코드에서는 객체의 내용을 변경할 수 있다.
+      코틀린 컴파일러는 자바 코드가 컬렉션에 대해 어떤 일을 하는지 완전히 분석할 수 없어 이를 막을 수 없다.
+       이런 함정은 널이 아닌 원소로 이뤄진 컬렉션 타입에서도 발생한다.
+       따라서 컬렉션을 자바 코드에 넘길 때는 특별히 주의를 기울여야 하며, 코틀린 쪽 타입이 적절히 자바 쪽에서 컬렉션에게 가할 수 있는 변경의 내용을 반영하게 해야 한다.
+
+    컬렉션을 플랫폼 타입으로 다루기
+     자바 쪽에서 선언언한 컬렉션 타입의 변수를 코틀린에서는 플랫폼 타입으로 본다.
+     플랫폼 타입인 컬렉션은 기본적으로 변경 가능성에 대해 알 수 없다.
+
+    객체의 배열과 원시 타입의 배열
+     코틀린 배열은 타입 파라미터를 받는 클래스다. 배열의 원소 타입은 타입 파라미터에 의해 정해진다.
+     배열을 인자로 받는 자바 함수를 호출하거나 vararg 파라미터를 받는 코틀린 함수를 호출하기 위해 가장 자주 배열을 만든다.
+     데이터가 이미 컬렉션에 들어 있다면 컬렉션을 배열로 변환해야한다.
+      toTypedArray 메소드를 사용하면 쉽게 컬렉션을 배열로 바꿀 수 있다.
+     배열 타입의 타입 인자도 항상 객체 타입이 된다.
+     코틀린은 원시 타입의 배열을 포현하는 별도 클래스를 각 원시 타입마다 하나씩 제공한다.
+      IntArray, ByteArray 등은 자바 원시 타입 배열인 int[], byte[] 등으로 컴파일된다.
+     코틀린 표준 라이브러리는 배열 기본 연산에 더해 컬렉션에 사용할 수 있는 모든 확장 함수를 배열에도 제공한다.
+      filter, map 등 을 배열에 적용해도 잘 작동한다. 다만 이런 함수가 반환하는 값은 배열이 아니라 리스트라는 점에 유의해야 한다.
+
+
+*/
 /*
     검색
      1. 자바8 Optional 타입
@@ -191,9 +258,12 @@
       동적 디스패치
        컴파일 시점에선 어떤 메소드를 호출하는지 모르고, 추상 타입의 메소드를 호출하는 것만 알고 있다.
        런타임 시점에 할당된 객체의 타입을 보고 메소드를 실행함.
+    4. 명령형 프로그래밍 과 함수형 프로그래밍
+    5. 값 복사 와 참조 복사
 */
 package sixth
 
+import fifth.Person_212
 
 
 fun notNullMethod(s: String) = "this is not null"
@@ -211,6 +281,36 @@ fun showProgress_274(progress: Int) {
     println("We're $percent% done!")
 }
 
+// 제네릭 파라미터를 반환하는 함수를 오버라이드하면서 반환 타입으로 Unit을 쓸 때 유용하다.
+interface Processor<T> {
+    fun process(): T // 어떤 값을 반환하라고 요구한다. Unit 타입도 Unit 값을 제공하기 때문에 Unit 값을 반환하는데 아무 문제가 없다.
+}
+
+class NoReulstProcessor: Processor<Unit> {
+    override fun process() { // Unit을 반환하지만 타입을 지정할 필요가 없다.
+        // return 을 명시할 필요가 없다. 컴파일러가 묵시적으로 return Unit 을 넣어준다.
+    }
+    /*
+        이 코드가 디컴파일 됐을 때는 작성한 코드의 형태가 많이 바뀌게 된다.
+         process()는 엄연히 Unit 타입의 값을 "반환" 하고 있다. return Unit.INTANCE
+        디컴파일 했을 때 process()는 public void process() 와 public Object process() 두 개의 메소드가 만들어진다.
+         이때 public Object process() 의 반환 값은 Unit 이다.
+         Unit 값을 반환하는 메소드 1개와 아무것도 반환하지 않는 메소드 1개가 만들어진다.
+    */
+
+}
+
+
+fun fail(message: String): Nothing {
+    throw IllegalStateException(message)
+}
+
+fun copyElements(source: Collection<Int>, target: MutableCollection<Int>) {
+    source.forEach {
+        target.add(it)
+    }
+}
+
 fun main(args: Array<String>) {
     var isNull: String? = "is not null"
     println(isNull?.let { notNullMethod(it) })
@@ -220,5 +320,24 @@ fun main(args: Array<String>) {
     val b: Byte = 1 // 상수 값은 적절한 타입으로 해석된다.
     val l = b + 1L // 산술 연산이 오버로드 돼 있어 Byte 와 Long 을 인자로 받을 수 있다.
     premetiveTypeCast(42) // 인자를 Long 타입으로 인식한다.
+
+
+//    val company: Person_212? = null
+//    val address = company ?: fail("No address")
+//    println(address)
+
+    val source: Collection<Int> = arrayListOf(3, 5, 7)
+    val target: MutableCollection<Int> = arrayListOf(1)
+    println("target before: $target")
+    /*
+    copyElements(source, target)
+    // 원본 target 이 변했다. 왜 변했나? target 변수는 원본 컬렉션의 주소 값을 갖고 있고, 파라미터에 원본의 주소 값을 넘겨주었으니 함수 안에서 원본의 주소 값을 가지고 작업을 하면 원본이 그대로 변하게 되는 것.
+    println("target after: $target")
+     */
+    // 원본 target 이 변하지 않으려면?
+    copyElements(source, target.toMutableList()) // 해당 컬렉션의 모든 원소를 채워서 새로운 컬렉션을 반환한다.
+    println("target after: $target")
+
+
 
 }
