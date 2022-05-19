@@ -1,5 +1,7 @@
 package tenth
 
+import kotlin.reflect.KProperty
+import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.memberProperties
 
 /*
@@ -126,7 +128,7 @@ import kotlin.reflect.full.memberProperties
     리플렉션 : 실행 시점에 코틀린 객체 내부 관찰
      실행 시점에 객체의 프로퍼티와 메소드에 접근할 수 있게 해주는 방법이다.
      보통 컴파일러는 실제로 가리키는 선언을 컴파일 시점에 찾아내서 해당 선언이 실제 존재함을 보장한다.
-      하지만 타입과 관계없이 객체를 다뤄야 하거나 객체가 제공하는 메소드나 프로퍼티 이름을 오직 실행 시점에만 알 수 잇는 경우가 있다.
+      하지만 타입과 관계없이 객체를 다뤄야 하거나 객체가 제공하는 메소드나 프로퍼티 이름을 오직 실행 시점에만 알 수 있는 경우가 있다.
       직렬화 라이브러리는 어떤 객체든 JSON을 변환할 수 있어야 하고, 실행 시점이 되기 전까지는 라이브러리가 직렬화할 프로퍼티나 클래스에 대한 정보를 알 수 없다.
       이런 경우 리플렉션을 사용해야 한다.
      코틀린에서 리플렉션을 사용하려면 두 가지 서로 다른 리플렉션 API 를 다뤄야 한다.
@@ -150,11 +152,56 @@ import kotlin.reflect.full.memberProperties
 
      KFunction
      KProperty
+      최상위 프로퍼티는 KProperty() 인터페이스의 인스턴스로 표현되며, 인자가없는 get 메소드가 있다.
+      멤버 프로퍼티는 KProperty1 인스턴스로 표현되며, 인자가 1개인 get 메소드가 있다.
+       멤버 프로퍼티는 객체에 속해 있으므로 get 메소드에게 객체 인스턴스를 넘겨야 프로퍼티 값을 얻을 수 있다.
+       KProperty1 은 제네릭 클래스이며, KProperty<Person, Int> 타입이라면 첫 번째 파라미터는 수신 객체 타입, 두 번째 파라미터는 프로퍼티 타입을 표현한다.
+      최상위 수준이나 클래스 안에 정의된 프로퍼티만 리플렉션으로 접근할 수 있고, 함수의 로컬 변수에는 접근할 수 없다.
+
+    애노테이션을 활용한 직렬화 제어
+    어떻게 특정 애노테이션이 붙은 프로퍼티를 제외할 수 있을까?
+     KAnnotatedElement 인터페이스에는 annotations 프로퍼티가 있다.
+      annotations 는 소스 코드상 해당 요소에 적용된 @Retention을 RUNTIME 으로 지정한 모든 애노테이션 인스턴스의 컬렉션이다.
+     KProperty 는 KAnnotatedElement 를 확장하므로 property.annotations 를 통해 프로퍼티의 모든 애노테이션을 얻을 수 있다.
+      그러나 모든 애노테이션을 사용하지 않고, 어떤 한 애노테이션을 찾기만 하면 된다. 이럴 때 findAnnotation 이라는 함수가 쓸모 있다.
+       findAnnotation 함수는 인자로 전달받은 타입에 해당하는 애노테이션이 있으면 그 애노테이션을 반환한다.
+
+
 
 
 */
 
 data class Person_438(val name: String, val age: Int)
+
+fun foo_450(x: Int) = println(x)
+
+var counter = 0
+
+// 리플렉션 API 실전에서 사용하는 예
+fun serialize(obj: Any) = buildString { serializeObject(obj) }
+private fun StringBuilder.serializeObject(obj: Any) {
+    val kClass = obj.javaClass.kotlin // 객체의 kClass 를 얻는다.
+    val properties = kClass.memberProperties // 객체의 모든 프로퍼티를 얻는다.
+    properties.joinToStringBuilder(this, "{", "}") { prop ->
+        serializeString(prop.name)
+        append(": ")
+        serializePropertyValue(prop.get(obj))
+    }
+    
+    obj.javaClass.kotlin.memberProperties
+            .filter { it.findAnnotation<JsonExclude>() == null }
+            .joinToStringBuilder(this, "{", "}") {
+                serializeProperty(it, obj)
+            }
+}
+
+private fun StringBuilder.serializeProperty(prop: KProperty<Any, *>, obj: Any) {
+    val jsonNameAnn = prop.findAnnotation<JsonName>()
+    val propName = jsonNameAnn?.name ?: prop.name
+    serializeString(propName)
+    append(": ")
+    serializePropertyValue(prop.get(obj))
+}
 
 
 fun main() {
@@ -162,5 +209,16 @@ fun main() {
     val kClass = person.javaClass.kotlin // KClass<Person_438>의 인스턴스를 반환한다.
     println(kClass.simpleName)
     kClass.memberProperties.forEach { println(it.name) } // memberProperties 는 확장 함수다.
+
+    val kFunction = ::foo_450 // KFunction1의 인스턴스
+    kFunction.call(12) // call 메소드는 모든 타입의 함수에 적용할 수 있는 일반적인 메소드지만 타입 안전성을 보장해주지는 않는다.
+
+    val kProperty = ::counter
+    kProperty.setter.call(21) // 리플렉션 기능을 통해 세터를 호출하면서 21을 인자로 넘긴다.
+    println(kProperty.get()) // get 메소드를 통해 프로퍼티 값을 가져온다.
+
+    val memberProperty = Person_438::name // 멤버 프로퍼티 참조
+    println(memberProperty.get(person)) // get 메소드에 프로퍼티를 얻고자 하는 객체 인스턴스 전달
+
 }
 
